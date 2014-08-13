@@ -1,0 +1,67 @@
+\documentclass[12pt,preprint,pdftex]{aastex}
+\usepackage{geometry}                		% See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}                   		% ... or a4paper or a5paper or ... 
+\usepackage{graphicx}				% Use pdf, png, jpg, or eps§ with pdflatex; use eps in DVI mode
+\usepackage{amsmath}								% TeX will automatically convert eps --> pdf in pdflatex		
+\usepackage{amssymb}
+
+\title{Searcing for flares in the GALEX photon data}
+%\author{The Author}
+
+\begin{document}
+%\maketitle
+\section{Models}
+
+\subsection{Flat Rate $+$ Localized Gaussian}
+\begin{equation} \Gamma(t) = b + A\exp{\left[-\frac{(t- \mu)^2}{2\sigma^2}\right]} \end{equation}
+\[ b = constant \]
+
+\subsection{Step Function}
+\begin{equation} \Gamma(t) = \left\{ \begin{array}{lr} b & : t < t_{step}, t > t_{step} + w \\ b + h & : t_{step} < t < t_{step} + w \end{array} \right\} \end{equation}
+
+This rate is in photons per tenth of a second.
+
+\section{Likelihoods}
+\subsection{Gaussian Likelihood}
+\begin{equation} p(d | \theta) = \exp\left(- \int_{t_a}^{t_b} \Gamma(t)dt\right) \prod_{i=1}^{N} \Gamma(t_i) \end{equation}
+\[ d = \{t_1, t_2, t_3, ... t_N\} \]
+\[ \theta = b, A, \mu, \sigma \]
+
+The integral over the rate function is the expected number of photons, N. 
+
+In the log base, the likelihood becomes:
+\begin{equation} \mathcal{L}(\theta |d) = \sum_{i=1}^{N} \text{ln}(\Gamma(t_i)) - \left[b(t_b - t_a) + A \sigma \sqrt{\frac{\pi}{2}} \left(\text{erf}\left(\frac{t_b - \mu}{\sqrt{2}\sigma}\right) - \text{erf}\left(\frac{t_a -\mu}{\sqrt{2}\sigma}\right)\right)\right] \end{equation}
+
+
+\subsection{Step Function Likelihood}
+\begin{equation}p(d | \theta) = \exp\left(- \int_{t_a}^{t_b} \Gamma(t)dt\right) \prod_{i=1}^{N} \Gamma(t_i) \end{equation}
+\[ d = \{t_1, t_2, t_3, ... t_N\} \]
+\[ \theta = t_{step}, w \]
+\[t_{step} = \text{location in time of beginning of step }\]
+\[w = \text{width of step function height }\]
+
+which simplifies to:
+\begin{equation}p(d | \theta) = b^{N_{out}}h^{N_{in}} - \int_{t_0}^{t_{step}}b dt - \int_{t_{step}}^{t_{step} + w} (b+h)dt - \int_{t_{step} + w} ^{t_f} b dt \end{equation}
+ \[N_{out} =\text{ no. of points outside of step height } \]
+ \[N_{in} =\text{ no. of points inside of step height } \]
+ \[t_0 =\text{ first chronological photon arrival time } \]
+ \[t_f =\text{ final chronological photon arrival time } \]
+ \[b =\text{ constant lower limit of step function } \]
+ \[h =\text{ constant upper limit of step function } \]
+
+In the log base, the likelihood becomes:
+\begin{equation} \mathcal{L}(\theta |d) = N_{out} \text{ln}(b) + N_{in}\text{ln}(h) - b(t_f - t_0 - w) - hw\end{equation}
+
+We can now solve for $b$ and $h$ for which the likelihood is maximized.
+
+\begin{equation} \frac{\partial \mathcal{L}}{\partial h} = \frac{N_{in}}{h} - w = 0, \end{equation}
+
+which gives
+\begin{equation} h = \frac{N_{in}}{w}. \end{equation}
+
+Similarly, 
+\begin{equation}\frac{\partial \mathcal{L}}{\partial b} = \frac{N_{out}}{b} - (t_f - t_0 - w) = 0, \end{equation}
+
+therefore, 
+\begin{equation} b = \frac{N_{out}}{t_f - t_0 - w}. \end{equation}
+\end{document}  
