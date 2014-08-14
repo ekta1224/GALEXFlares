@@ -6,17 +6,24 @@ import numpy as np
 from fakedata import *
 from scipy.optimize import fmin
 
-def step(width, t0, height, rate, data):
-    model = len(data) * [rate]
+def step(width, tstep, height, base, data):
+    model = len(data) * [base]
     model = np.array(model)
-    left = t0 < data
-    right = data < t0+width
+    left = tstep < data
+    right = data < tstep + width
     box = left * right
     model[box] = height
     return model
 
-def ln_like(pars, data):
-    width, tstep = pars
+def plot_step(width,tstep, height, base, data):
+    plt.vlines(x=tstep, ymin=base, ymax=height, colors='red')
+    plt.vlines(x=tstep+width, ymin=base, ymax=height, colors='red')
+    plt.hlines(y=base, xmin=np.min(data), xmax=tstep, colors='red')
+    plt.hlines(y=height, xmin=tstep, xmax=tstep+width,colors='red')
+    plt.hlines(y=base, xmin=tstep+width, xmax=np.max(data),colors='red')
+    return 
+
+def ln_like(width,tstep, data):
     data = np.array(sorted(data))
     w = width
     t0 = tstep-data[0]
@@ -27,8 +34,19 @@ def ln_like(pars, data):
     b = Nout/(t0+t1)
     return Nout*np.log(b) + Nin*np.log(h) - b*(t0+t1) - h*w
 
-def get_hb(pars,data):
+def ln_like_opt(pars, data):
     width, tstep = pars
+    data = np.array(sorted(data))
+    w = width
+    t0 = tstep-data[0]
+    t1 = data[-1] - (tstep + w)
+    Nin = sum((tstep < data) * (data < tstep+w))
+    Nout = len(data) - Nin
+    h = Nin/w
+    b = Nout/(t0+t1)
+    return -1* (Nout*np.log(b) + Nin*np.log(h) - b*(t0+t1) - h*w)
+
+def get_hb(width,tstep,data):
     data = np.array(sorted(data))
     w = width
     t0 = tstep-data[0]
@@ -50,14 +68,6 @@ if __name__ == "__main__":
     plt.subplot(411)
     lls = []
     widths = np.arange(1, 25, .1)
-    #optimization test
-    pars = [width, tstep] 
-    opt = fmin(ln_like, x0=pars, args=([fakedata]))
-    print opt[0], opt[1]
-    pars = [opt[0], opt[1]]
-    #print fmin(get_hb, x0=pars, args=([fakedata]))
-    print get_hb(pars, fakedata)
-    assert False
 
     for w in widths:
         ll = ln_like(w, tstep, fakedata)
@@ -89,7 +99,7 @@ if __name__ == "__main__":
     ymin = np.sort(lls)[np.isfinite(np.sort(lls))][0]
     ymax = np.sort(lls)[np.isfinite(np.sort(lls))][-1]
     plt.vlines(x=tstep, ymin=ymin, ymax=ymax, colors='red', linestyle='--')
-    plt.xlabel('step start time')
+    plt.xlabel(r'$t_{step}$')
     plt.ylabel('likelihood')
 
     plt.subplot(413)
@@ -103,8 +113,14 @@ if __name__ == "__main__":
 
     plt.subplot(414)
     plt.hist(fakedata, bins=len(fakedata), alpha = 0.5)
+    #optimization test
+    pars = [width, tstep] 
+    opt = fmin(ln_like_opt, x0=pars, args=([fakedata]))
+    print opt[0], opt[1]
+    hb = get_hb(opt[0],opt[1], fakedata)
+    plot_step(opt[0], opt[1], hb[0]*.1, hb[1]*.1, fakedata)
     plt.tight_layout()
 
-    plt.savefig('step_lnll.pdf')
+    plt.savefig('step_lnll_bestfit.pdf')
 
 
